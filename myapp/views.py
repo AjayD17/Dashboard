@@ -4,6 +4,7 @@ from django.shortcuts import render
 import requests
 import json
 from collections import Counter
+from .models import CategorySelection
 
 API_KEY = "AIzaSyDR4jGJHp7kaHFyOJfy99hKV3UXLHvyu-c"
 SHEET_ID = "1J2P_DDmpbrkTQzgykXXlr4e9winAk7yMqu7z70KFchU"
@@ -37,15 +38,9 @@ def dashboard_view(request):
 
     # Calculate totals for each category
     for cat, range_name in CATEGORY_RANGES.items():
-        print("CATEGORY_RANGES")
-        print(cat)
-        print(range_name)
-        print(CATEGORY_RANGES)
         try:
             sheet_data = fetch_sheet_data(SHEET_ID, range_name, API_KEY)
-            print("Sheet data", sheet_data)
             values = sheet_data.get("values", [])
-            print("Sheet data values", values)
             if not values or len(values) <= 1:
                 continue
             total = sum(
@@ -53,22 +48,23 @@ def dashboard_view(request):
                 if len(row) >= 3 and row[2].replace('.', '', 1).isdigit()
             )
             category_totals[cat] = total
-            print(category_totals)
         except Exception as e:
             print(f"Error fetching data for {cat}: {e}")
             category_totals[cat] = 0
+
     # Load selected category data and prepare chart entries
     if category in CATEGORY_RANGES:
+        # ✅ Log valid selection to the database
+        CategorySelection.objects.create(category=category, subcategory=subcategory or None)
+
         try:
             sheet_data = fetch_sheet_data(SHEET_ID, CATEGORY_RANGES[category], API_KEY)
             values = sheet_data.get("values", [])
             rows = values[1:] if values and len(values) > 1 else []
-            # print(rows)
             entries = []
-            a= 0
+            a = 0
             for row in rows:
                 if len(row) >= 3:
-                    print(row)
                     main_cat = row[0].strip()
                     label = row[1].strip()
                     try:
@@ -77,26 +73,15 @@ def dashboard_view(request):
                         continue
 
                     subcategory_set.add(main_cat)
-                    print(a)
-                    if main_cat:
-                        print("a= 0")
-                        a= 0
-                        #print(f"Main Category: {main_cat}, Label: {label}, Value: {value}\n {(main_cat.lower() == subcategory.lower() or a==1),a}\n")
-                    # if a:
                     if main_cat.lower() == subcategory.lower():
-                        a= 1
-                        #print('a=1',a)
+                        a = 1
                         entries.append((f"{label} ({main_cat})", value))
-                        print("Entries")
-                        print(entries)
                     elif a:
-                        print('here')
                         entries.append((f"{label} ({main_cat})", value))
-                    # else:
-                    #     entries.append((f"{label} ({main_cat})", value))
+
             if entries:
                 all_labels, all_values = zip(*entries)
-                chart_data_all = {"labels": entries, "values": all_values}
+                chart_data_all = {"labels": all_labels, "values": all_values}
 
                 top_entries = sorted(entries, key=lambda x: x[1], reverse=True)[:5]
                 top_labels, top_values = zip(*top_entries)
@@ -105,7 +90,7 @@ def dashboard_view(request):
         except Exception as e:
             print(f"Error processing category {category}: {e}")
             subcategory_set = set()
-    print(chart_data_all)
+
     return render(request, "index.html", {
         "selected_category": category,
         "selected_subcategory": subcategory,
@@ -120,7 +105,6 @@ def show_data_view(request, category):
     category = category.lower()
     range_name = CATEGORY_RANGES.get(category)
     table_data = {'headers': [], 'rows': []}
-
     try:
         if not range_name:
             raise ValueError("Invalid category selected.")
