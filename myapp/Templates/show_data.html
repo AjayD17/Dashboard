@@ -1,0 +1,110 @@
+<!-- templates/show_data.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <title>{{ category|title }} Data Table</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="{% static 'Bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #8be9d8, #70c1b3);
+            padding-bottom: 5vh;
+            color: white;
+        }
+
+        h3 {
+            margin-top: 4vh;
+            text-align: center;
+            color: #333;
+        }
+
+        .login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 10vh auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .login-container p {
+            color: red;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .login-container a {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .login-container a:hover {
+            background-color: #0056b3;
+        }
+
+        .container,
+        .container-sm,
+        .container-md,
+        .container-lg,
+        .container-xl,
+        .container-xxl {
+            max-width: 1200px !important;
+        }
+    </style>
+</head>
+<body>
+
+{% include "navbar.html" %}
+
+{% if user.is_authenticated %}
+    <div class="container mt-5">
+        <h3 class="mb-4 text-uppercase"><b>{{ category|upper }} DATA TABLE</b></h3>
+
+        <div class="text-end mb-3">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+
+        {% if table_data.headers %}
+            <table class="table table-bordered table-striped border-dark">
+                <thead class="table-dark text-center">
+                    <tr>
+                        {% for header in table_data.headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data.rows %}
+                        <tr>
+                            {% if row.show_category %}
+                                <td rowspan="{{ row.rowspan }}" class="align-middle text-center">{{ row.category }}</td>
+                            {% endif %}
+                            <td class="text-center">{{ row.name }}</td>
+                            <td class="text-center">{{ row.count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No data available for this category.</p>
+        {% endif %}
+    </div>
+{% else %}
+    <div class="login-container">
+        <p>Please log in to see the data table.</p>
+        <a href="{% url 'signup' %}">Login</a>
+    </div>
+{% endif %}
+
+</body>
+</html>
