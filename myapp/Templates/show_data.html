@@ -63,10 +63,6 @@
     </style>
 </head>
 <body>
-
-{% include "navbar.html" %}
-
-{% if user.is_authenticated %}
     <div class="container mt-5">
         <h3 class="mb-4 text-uppercase"><b>{{ category|upper }} DATA TABLE</b></h3>
 
@@ -99,12 +95,6 @@
             <p>No data available for this category.</p>
         {% endif %}
     </div>
-{% else %}
-    <div class="login-container">
-        <p>Please log in to see the data table.</p>
-        <a href="{% url 'signup' %}">Login</a>
-    </div>
-{% endif %}
 
 </body>
 </html>
